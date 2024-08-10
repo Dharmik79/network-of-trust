@@ -35,7 +35,7 @@ const Demo: FC<{ style: CSSProperties }> = ({ style }) => {
 const Home: NextPage = () => {
   return (
     <>
-      <Demo style={{ height: 300 }} />
+      <Demo style={{ height: 700 }} />
     </>
   );
 };
