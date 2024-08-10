@@ -1,0 +1,19 @@
+{
+  "0x6d86bd0b1d6a64247af654f100037f745fda5fb7b2cec5b1d855170cfaeb64f7": {
+    "User_ID": {
+      "type": "address",
+      "value": "data[0]",
+      "state": false
+    },
+    "Skill_Name": {
+      "type": "string",
+      "value": "data[1]",
+      "state": false
+    },
+    "Rating": {
+      "type": "uint8",
+      "value": "data[2]",
+      "state": false
+    }
+  }
+}
