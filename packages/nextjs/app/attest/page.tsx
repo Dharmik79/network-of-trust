@@ -1,9 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
+import schemas from "../../schema/skill.json";
+import { EAS, SchemaEncoder } from "@ethereum-attestation-service/eas-sdk";
+import { ethers } from "ethers";
+import { useAccount } from "wagmi";
+
+const provider = new ethers.BrowserProvider(window.ethereum);
+
+const easContractAddress = "0x4200000000000000000000000000000000000021";
+const schemaUID = "0x6d86bd0b1d6a64247af654f100037f745fda5fb7b2cec5b1d855170cfaeb64f7";
+const eas = new EAS(easContractAddress);
 
 const SkillRatingForm = () => {
-  const [formData, setFormData] = useState({
+  const { address: connectedAddress } = useAccount();
+
+  const [formData, setFormData] = useState<{
+    [key: string]: string | number;
+  }>({
     address: "",
     skill: "",
     rating: 5,
@@ -24,11 +38,61 @@ const SkillRatingForm = () => {
     });
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     console.log("Form Data:", formData);
+
+    let encodedString = "";
+    const eventDetailsSchema: { [key: string]: { type: string; value: string } } =
+      schemas["0x6d86bd0b1d6a64247af654f100037f745fda5fb7b2cec5b1d855170cfaeb64f7"];
+    console.log("Event Details Schema:", eventDetailsSchema);
+    for (const key in eventDetailsSchema) {
+      if (Object.hasOwnProperty.call(eventDetailsSchema, key)) {
+        encodedString += `${eventDetailsSchema[key].type} ${key},`;
+      }
+    }
+
+    encodedString = encodedString.slice(0, -1);
+    const schemaEncoder = new SchemaEncoder(encodedString);
+    const dataToEncode = Object.entries(eventDetailsSchema).map(([key, { type, value }]) => ({
+      name: key,
+      value: formData[value], // Getting the actual value from eventDetails
+      type: type,
+    }));
+
+    console.log("Data to encode:", dataToEncode);
+
+    const encodedData = schemaEncoder.encodeData(dataToEncode);
+    const schemaUID = await grantAttestation(encodedData);
+    console.log("Schema UID:", schemaUID);
+
     // Perform form submission logic here
   };
+
+  async function grantAttestation(encodedData: any) {
+    try {
+      // Get the signer from the provider
+      const signer = await provider.getSigner();
+      // Connect the signer to the EAS contract
+      await eas.connect(signer);
+      const tx = await eas.attest({
+        schema: schemaUID,
+        data: {
+          recipient: connectedAddress || "",
+          expirationTime: BigInt(0),
+          revocable: true, // Be aware that if your schema is not revocable, this MUST be false
+          data: encodedData,
+        },
+      });
+
+      const result = await tx.wait();
+
+      return result;
+    } catch (error) {
+      console.error("Error granting attestation:", error);
+      throw error;
+    }
+  }
 
   return (
     <div className="bg-gradient-to-br from-gray-100 to-gray-300 p-10 rounded-lg shadow-lg w-full max-w-lg mx-auto">
