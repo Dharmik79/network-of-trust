@@ -16,7 +16,7 @@ const SkillRatingForm = () => {
   const { address: connectedAddress } = useAccount();
 
   const [formData, setFormData] = useState<{
-    [key: string]: string | number;
+    [key: string]: string | number | undefined;
   }>({
     address: "",
     skill: "",
@@ -78,7 +78,7 @@ const SkillRatingForm = () => {
       const tx = await eas.attest({
         schema: schemaUID,
         data: {
-          recipient: connectedAddress || "",
+          recipient: formData.address as string,
           expirationTime: BigInt(0),
           revocable: true, // Be aware that if your schema is not revocable, this MUST be false
           data: encodedData,
